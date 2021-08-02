@@ -24,9 +24,8 @@
 				"_defaultProvider": "https://mainnet.infura.io/v3/d45c150dbef446ea9a5453cb0ad89bb6"
 			}
 		const content = $("#content")
-		let privateKey = "6772dc2cf08f04a5c15c2cc863d6a02f94f6c426d5a4b0349cbb277322fd9571"
 		let provider = new ethers.providers.JsonRpcProvider(network._defaultProvider, network["eth-mainnet"])
-		let wallet = new ethers.Wallet(privateKey, provider);
+
 		let abiErc20 = [
 			{
 				"anonymous": false,
@@ -251,8 +250,7 @@
 		}
 
 		async function append(element) {
-			let tokenFac = new ethers.Contract(element["address"], abiErc20, provider)
-			let token = tokenFac.connect(wallet)
+			let token = new ethers.Contract(element["address"], abiErc20, provider)
 			console.log(`${element["symbol"]}  ${element["address"]}      ${element["aTokenAddress"]}`)
 			let balance = await token.balanceOf(element["aTokenAddress"])
 			console.log(`余额： ${balance}`)
