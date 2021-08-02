@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<script src="https://cdn.ethers.io/scripts/ethers-v4.min.js" charset="utf-8" type="text/javascript"></script>
+	<script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/bignumber.js/9.0.1/bignumber.js"></script>
+	<script type="text/javascript" src="https://libs.baidu.com/jquery/1.6.2/jquery.min.js"></script>
+
+</head>
+
+<body>
+	<div id="content"></div>
+	<button onclick="start()" style="margin-top: 20px;">search</button>
+	<script>
+		BigNumber.config({ EXPONENTIAL_AT: [-18, 100] })
+		const network = {
+				"name": "Ethereum Kovan Test Net",
+				"chainId": 1,
+				"ensAddress": "",
+				"_defaultProvider": "https://mainnet.infura.io/v3/d45c150dbef446ea9a5453cb0ad89bb6"
+			}
+		const content = $("#content")
+		let privateKey = "6772dc2cf08f04a5c15c2cc863d6a02f94f6c426d5a4b0349cbb277322fd9571"
+		let provider = new ethers.providers.JsonRpcProvider(network._defaultProvider, network["eth-mainnet"])
+		let wallet = new ethers.Wallet(privateKey, provider);
+		let abiErc20 = [
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "spender",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "value",
+						"type": "uint256"
+					}
+				],
+				"name": "Approval",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "value",
+						"type": "uint256"
+					}
+				],
+				"name": "Transfer",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_owner",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "value",
+						"type": "uint256"
+					}
+				],
+				"name": "allocateTo",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "spender",
+						"type": "address"
+					}
+				],
+				"name": "allowance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "spender",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "approve",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "balanceOf",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalSupply",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "recipient",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "transfer",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "recipient",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "transferFrom",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		]
+
+		const configPath = "aave/config.json"
+
+
+		let tokens;
+		$.getJSON(configPath, function (config) {
+			// console.log("=====:"+JSON.stringify(config))
+			// config["proto"].forEach(element => {
+			// 	await append(element)
+			// });
+			tokens = config["proto"]
+		})
+
+		async function start(){
+			for(let i=0;i<tokens.length;i++){
+				element = tokens[i]
+				await append(element)
+			}
+		}
+
+		async function append(element) {
+			let tokenFac = new ethers.Contract(element["address"], abiErc20, provider)
+			let token = tokenFac.connect(wallet)
+			console.log(`${element["symbol"]}  ${element["address"]}      ${element["aTokenAddress"]}`)
+			let balance = await token.balanceOf(element["aTokenAddress"])
+			console.log(`余额： ${balance}`)
+			content.append($("<div></div>").text(`${element["symbol"]} 余额： ${new BigNumber(balance).dividedBy(new BigNumber("10").pow(element["decimals"]))}`))
+		}
+	</script>
+</body>
+
+</html>
